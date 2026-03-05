@@ -46,7 +46,7 @@ main = do
 
     assertEq
         "Simplify diff(x * x)"
-        (Add (Var "x") (Var "x") :: Expr Int)
+        (Mul (Const 2) (Var "x") :: Expr Int)
         (simplify (diff "x" (Mul (Var "x") (Var "x"))))
 
     let fiveX = Mul (Const 5) (Var "x")
