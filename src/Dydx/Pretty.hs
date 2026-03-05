@@ -36,7 +36,7 @@ prettyPrec p (Mul e (Const 1)) = prettyPrec p e
 prettyPrec p (Mul le (Pow re (Const (-1)))) =
     showParens (p > 2) $ prettyPrec 2 le ++ " / " ++ prettyPrec 3 re
 prettyPrec p (Mul (Const (-1)) e) =
-    showParens (p > 3) $ "-" ++ prettyPrec 4 e
+    showParens (p > 3) $ "-" ++ prettyPrec 2 e
 prettyPrec p (Mul le re) =
     showParens (p > 2) $ prettyPrec 2 le ++ " * " ++ prettyPrec 2 re
 -- Pow
