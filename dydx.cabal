@@ -48,9 +48,6 @@ maintainer:         67481978@qq.com
 category:           Math
 build-type:         Simple
 
--- Extra doc files to be distributed with the package, such as a CHANGELOG or a README.
-extra-doc-files:    CHANGELOG.md
-
 -- Extra source files to be distributed with the package, such as examples, or a tutorial module.
 -- extra-source-files:
 
@@ -62,7 +59,10 @@ library
     import:           warnings
 
     -- Modules exported by the library.
-    exposed-modules:  MyLib
+    exposed-modules:  Dydx.Expr
+                    , Dydx.Diff
+                    , Dydx.Simplify
+                    , Dydx.Pretty
 
     -- Modules included in this library but not exported.
     -- other-modules:
