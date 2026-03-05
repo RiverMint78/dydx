@@ -4,6 +4,7 @@ import Dydx.Diff
 import Dydx.Expr
 import Dydx.Simplify
 import System.Exit (exitFailure)
+import Dydx.Pretty
 
 assertEq :: (Show a, Eq a) => String -> a -> a -> IO ()
 assertEq msg expected actual
@@ -73,5 +74,13 @@ main = do
         "Simplify diff(5 * x)"
         (Const 5 :: Expr Int)
         (simplify (diff "x" fiveX))
+
+    -- Pretty Test
+    putStrLn "\nRunning Pretty Printer tests..."
+
+    let complexExpr = diff "x" (Mul (Sin (Var "x")) (Var "x")) :: Expr Int
+    putStrLn $ "Raw AST:    " ++ show complexExpr
+    putStrLn $ "Pretty:     " ++ pretty complexExpr
+    putStrLn $ "Simplified: " ++ pretty (simplify complexExpr)
 
     putStrLn "\nAll tests passed successfully!"
