@@ -20,7 +20,21 @@ simplifyAdd (Const 0) e = e
 simplifyAdd e (Const 0) = e
 -- Right-associative rewriting
 simplifyAdd (Add le re) e = simplifyAdd le (simplifyAdd re e)
--- Combine like terms
+-- Neg convertion
+simplifyAdd le (Neg e) = simplifySub le e
+simplifyAdd (Neg e) re = simplifySub re e
+-- Deep combine
+simplifyAdd le (Add rle rre) =
+    let combined = simplifyAdd le rle
+     in if combined /= Add le rle
+            then simplifyAdd combined rre
+            else Add le (Add rle rre)
+simplifyAdd le (Sub rle rre) =
+    let combined = simplifyAdd le rle
+     in if combined /= Add le rle
+            then simplifySub combined rre
+            else Sub (Add le rle) rre
+-- Combine neighbor like terms
 simplifyAdd le re | le == re = simplifyMul (Const 2) le
 simplifyAdd (Mul (Const a) le) re | le == re = simplifyMul (Const (a + 1)) le
 simplifyAdd le (Mul (Const a) re) | le == re = simplifyMul (Const (a + 1)) le
@@ -38,6 +52,7 @@ simplifyMul e (Const 1) = e
 -- Absorb negatives
 simplifyMul (Const a) (Neg e) = simplifyMul (Const (-a)) e
 simplifyMul (Neg e) (Const a) = simplifyMul (Const (-a)) e
+simplifyMul le (Neg re) = simplifyNeg (simplifyMul le re)
 -- Extract and combine constants using associativity
 simplifyMul (Const a) (Mul (Const b) re) = simplifyMul (Const (a * b)) re
 simplifyMul (Mul (Const a) le) (Const b) = simplifyMul (Const (a * b)) le
@@ -54,7 +69,7 @@ simplifySub e (Const 0) = e
 simplifySub (Const 0) e = simplifyNeg e
 -- Subtracting terms
 simplifySub e1 e2 | e1 == e2 = Const 0
--- Combine like terms
+-- Combine neighbor like terms
 simplifySub e1 (Mul (Const a) e2) | e1 == e2 = simplifyMul (Const (1 - a)) e1
 simplifySub (Mul (Const a) e1) (Mul (Const b) e2) | e1 == e2 = simplifyMul (Const (a - b)) e1
 -- Fallback
