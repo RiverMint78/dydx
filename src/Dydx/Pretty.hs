@@ -16,16 +16,19 @@ prettyPrec :: (Show a) => Int -> Expr a -> String
 prettyPrec _ (Const c) = show c
 prettyPrec _ (Var v) = v
 -- Functions / Neg
-prettyPrec _ (Neg e) = "-(" ++ prettyPrec 0 e ++ ")"
 prettyPrec _ (Sin e) = "sin(" ++ prettyPrec 0 e ++ ")"
 prettyPrec _ (Cos e) = "cos(" ++ prettyPrec 0 e ++ ")"
 prettyPrec _ (Exp e) = "exp(" ++ prettyPrec 0 e ++ ")"
+prettyPrec p (Neg e) = showParens (p > 3) $ "-" ++ prettyPrec 4 e
 -- Add / Sub
-prettyPrec p (Add e1 e2) =
-    showParens (p > 1) $ prettyPrec 1 e1 ++ " + " ++ prettyPrec 1 e2
-prettyPrec p (Sub e1 e2) =
+prettyPrec p (Add le re) =
+    showParens (p > 1) $ prettyPrec 1 le ++ " + " ++ prettyPrec 1 re
+prettyPrec p (Sub le re) =
     -- x - (y - z)
-    showParens (p > 1) $ prettyPrec 1 e1 ++ " - " ++ prettyPrec 2 e2
--- Mul
-prettyPrec p (Mul e1 e2) =
-    showParens (p > 2) $ prettyPrec 2 e1 ++ " * " ++ prettyPrec 2 e2
+    showParens (p > 1) $ prettyPrec 1 le ++ " - " ++ prettyPrec 2 re
+-- Mul / Div
+prettyPrec p (Mul le re) =
+    showParens (p > 2) $ prettyPrec 2 le ++ " * " ++ prettyPrec 2 re
+prettyPrec p (Div le re) =
+    -- a / (b / c)
+    showParens (p > 2) $ prettyPrec 2 le ++ " / " ++ prettyPrec 3 re
