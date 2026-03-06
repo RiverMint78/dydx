@@ -1,6 +1,7 @@
-module Dydx.Simplify (simplify) where
+module Dydx.HighorderSimplify (simplify) where
 
 import Data.List (sortBy)
+import Data.Ord (comparing)
 import Dydx.Expr
 
 simplify :: (Eq a, Ord a, Num a) => Expr a -> Expr a
@@ -14,15 +15,43 @@ simplify (Cos e) = simplifyCos (simplify e)
 simplify (Exp e) = simplifyExp (simplify e)
 simplify e = e -- Const / Var
 
+flattenOp :: (Expr a -> Maybe (Expr a, Expr a)) -> Expr a -> [Expr a]
+flattenOp matchOp expr = go expr []
+ where
+  go e acc = case matchOp e of
+    Just (l, r) -> go l (go r acc)
+    Nothing -> e : acc
+
+buildOp :: Expr a -> (Expr a -> Expr a -> Expr a) -> [Expr a] -> Expr a
+buildOp emptyVal _ [] = emptyVal
+buildOp _ op xs = foldr1 op xs
+
+simplifyPipeline ::
+  (Eq a, Ord a, Num a) =>
+  Expr a -> -- identity
+  Maybe (Expr a) -> -- absorbing, 0 * E = 0
+  (Expr a -> [Expr a]) -> -- flatten
+  (Expr a -> Expr a) -> -- base for sort
+  ([Expr a] -> [Expr a]) -> -- merge
+  ([Expr a] -> Expr a) -> -- rebuild
+  Expr a -> -- left expr
+  Expr a -> -- right expr
+  Expr a
+simplifyPipeline _ _ _ _ _ _ NaN _ = NaN
+simplifyPipeline _ _ _ _ _ _ _ NaN = NaN
+simplifyPipeline ident absorbing flat getBase merge build le re
+  | Just z <- absorbing, z `elem` terms = z
+  | otherwise = build merged
+ where
+  terms = flat le ++ flat re
+  sorted = sortBy (comparing getBase) terms
+  merged = filter (/= ident) (merge sorted)
+
 -- Add helpers
 baseAdd :: (Num a) => Expr a -> Expr a
 baseAdd (Mul (Const _) e) = e
 baseAdd (Const _) = Const 1
 baseAdd e = e
-
-flattenAdd :: Expr a -> [Expr a]
-flattenAdd (Add le re) = flattenAdd le ++ flattenAdd re
-flattenAdd e = [e]
 
 extractAdd :: (Num a) => Expr a -> (a, Expr a)
 extractAdd (Mul (Const c) e) = (c, e)
@@ -31,38 +60,25 @@ extractAdd e = (1, e)
 mergeAddTerms :: (Eq a, Ord a, Num a) => [Expr a] -> [Expr a]
 mergeAddTerms [] = []
 mergeAddTerms [x] = [x]
--- Const folding
 mergeAddTerms (Const a : Const b : xs) = mergeAddTerms (Const (a + b) : xs)
--- Combine neighbor terms
-mergeAddTerms (x : y : xs) =
-    let (cx, bx) = extractAdd x
-        (cy, by) = extractAdd y
-     in if bx == by
-            then mergeAddTerms (simplifyMul (Const (cx + cy)) bx : xs)
-            else x : mergeAddTerms (y : xs)
-
-buildAdd :: (Eq a, Num a) => [Expr a] -> Expr a
-buildAdd [] = Const 0
-buildAdd [x] = x
-buildAdd (x : xs) = Add x (buildAdd xs)
+mergeAddTerms (x : y : xs)
+  | bx == by = mergeAddTerms (simplifyMul (Const (cx + cy)) bx : xs)
+  | otherwise = x : mergeAddTerms (y : xs)
+ where
+  (cx, bx) = extractAdd x
+  (cy, by) = extractAdd y
 
 simplifyAdd :: (Eq a, Ord a, Num a) => Expr a -> Expr a -> Expr a
-simplifyAdd NaN _ = NaN
-simplifyAdd _ NaN = NaN
-simplifyAdd le re =
-    let terms = sortBy (\x y -> compare (baseAdd x) (baseAdd y)) (flattenAdd le ++ flattenAdd re)
-        merged = filter (/= Const 0) (mergeAddTerms terms)
-     in if null merged then Const 0 else buildAdd merged
+simplifyAdd = simplifyPipeline (Const 0) Nothing flattenA baseAdd mergeAddTerms buildA
+ where
+  flattenA = flattenOp (\case Add l r -> Just (l, r); _ -> Nothing)
+  buildA = buildOp (Const 0) Add
 
 -- Mul helpers
 baseMul :: (Num a) => Expr a -> Expr a
 baseMul (Pow b _) = b
 baseMul (Const _) = Const 1
 baseMul e = e
-
-flattenMul :: Expr a -> [Expr a]
-flattenMul (Mul le re) = flattenMul le ++ flattenMul re
-flattenMul e = [e]
 
 extractMul :: (Num a) => Expr a -> (Expr a, Expr a)
 extractMul (Pow b e) = (b, e)
@@ -71,44 +87,30 @@ extractMul e = (e, Const 1)
 mergeMulTerms :: (Eq a, Ord a, Num a) => [Expr a] -> [Expr a]
 mergeMulTerms [] = []
 mergeMulTerms [x] = [x]
--- Const folding
 mergeMulTerms (Const a : Const b : xs) = mergeMulTerms (Const (a * b) : xs)
--- Pow combine
-mergeMulTerms (x : y : xs) =
-    let (bx, ex) = extractMul x
-        (by, ey) = extractMul y
-     in if bx == by
-            then mergeMulTerms (simplifyPow bx (simplifyAdd ex ey) : xs)
-            else x : mergeMulTerms (y : xs)
-
-buildMul :: (Eq a, Num a) => [Expr a] -> Expr a
-buildMul [] = Const 1
-buildMul [x] = x
-buildMul (x : xs) = Mul x (buildMul xs)
+mergeMulTerms (x : y : xs)
+  | bx == by = mergeMulTerms (simplifyPow bx (simplifyAdd ex ey) : xs)
+  | otherwise = x : mergeMulTerms (y : xs)
+ where
+  (bx, ex) = extractMul x
+  (by, ey) = extractMul y
 
 simplifyMul :: (Eq a, Ord a, Num a) => Expr a -> Expr a -> Expr a
-simplifyMul NaN _ = NaN
-simplifyMul _ NaN = NaN
-simplifyMul le re =
-    let allTerms = flattenMul le ++ flattenMul re
-     in if Const 0 `elem` allTerms
-            then Const 0
-            else
-                let terms = sortBy (\x y -> compare (baseMul x) (baseMul y)) allTerms
-                    merged = filter (/= Const 1) (mergeMulTerms terms)
-                 in if null merged then Const 1 else buildMul merged
+simplifyMul = simplifyPipeline (Const 1) (Just (Const 0)) flattenM baseMul mergeMulTerms buildM
+ where
+  flattenM = flattenOp (\case Mul l r -> Just (l, r); _ -> Nothing)
+  buildM = buildOp (Const 1) Mul
 
+-- Functions
 simplifyPow :: (Eq a, Ord a, Num a) => Expr a -> Expr a -> Expr a
 simplifyPow NaN _ = NaN
 simplifyPow _ NaN = NaN
--- Const folding
 simplifyPow (Const 0) (Const n) | n < 0 = NaN
 simplifyPow (Const 0) (Const 0) = NaN
 simplifyPow _ (Const 0) = Const 1
 simplifyPow e (Const 1) = e
 simplifyPow (Const 0) _ = Const 0
 simplifyPow (Const 1) _ = Const 1
--- Pow combine
 simplifyPow (Pow u a) b = simplifyPow u (simplifyMul a b)
 simplifyPow le re = Pow le re
 

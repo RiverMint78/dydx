@@ -3,7 +3,7 @@ module Main where
 import Dydx.Diff
 import Dydx.Expr
 import Dydx.Pretty
-import Dydx.Simplify
+import Dydx.HighorderSimplify
 import System.Exit (exitFailure)
 
 assertEq :: (Show a, Eq a) => String -> a -> a -> IO ()

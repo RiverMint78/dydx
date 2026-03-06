@@ -61,7 +61,8 @@ library
     -- Modules exported by the library.
     exposed-modules:  Dydx.Expr
                     , Dydx.Diff
-                    , Dydx.Simplify
+                    -- , Dydx.Simplify
+                    , Dydx.HighorderSimplify
                     , Dydx.Pretty
 
     -- Modules included in this library but not exported.
