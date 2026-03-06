@@ -24,6 +24,15 @@ prettyPrec _ (Sin e) = "sin(" ++ prettyPrec 0 e ++ ")"
 prettyPrec _ (Cos e) = "cos(" ++ prettyPrec 0 e ++ ")"
 prettyPrec _ (Exp e) = "exp(" ++ prettyPrec 0 e ++ ")"
 prettyPrec _ (Log e) = "ln(" ++ prettyPrec 0 e ++ ")"
+prettyPrec _ (Sqrt e) = "sqrt(" ++ prettyPrec 0 e ++ ")"
+prettyPrec _ (Asin e) = "asin(" ++ prettyPrec 0 e ++ ")"
+prettyPrec _ (Acos e) = "acos(" ++ prettyPrec 0 e ++ ")"
+prettyPrec _ (Atan e) = "atan(" ++ prettyPrec 0 e ++ ")"
+prettyPrec _ (Sinh e) = "sinh(" ++ prettyPrec 0 e ++ ")"
+prettyPrec _ (Cosh e) = "cosh(" ++ prettyPrec 0 e ++ ")"
+prettyPrec _ (Asinh e) = "asinh(" ++ prettyPrec 0 e ++ ")"
+prettyPrec _ (Acosh e) = "acosh(" ++ prettyPrec 0 e ++ ")"
+prettyPrec _ (Atanh e) = "atanh(" ++ prettyPrec 0 e ++ ")"
 -- Sub / Add
 prettyPrec p (Add le (Mul (Const c) re))
     | c == -1 = showParens (p > 1) $ prettyPrec 1 le ++ " - " ++ prettyPrec 2 re
