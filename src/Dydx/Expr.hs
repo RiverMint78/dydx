@@ -7,10 +7,19 @@ data Expr a
   | Add !(Expr a) !(Expr a)
   | Mul !(Expr a) !(Expr a)
   | Pow !(Expr a) !(Expr a)
+  | Sqrt !(Expr a)
   | Log !(Expr a)
   | Exp !(Expr a)
   | Sin !(Expr a)
   | Cos !(Expr a)
+  | Asin !(Expr a)
+  | Acos !(Expr a)
+  | Atan !(Expr a)
+  | Sinh !(Expr a)
+  | Cosh !(Expr a)
+  | Asinh !(Expr a)
+  | Acosh !(Expr a)
+  | Atanh !(Expr a)
   | NaN
   deriving (Show, Eq, Ord)
 
@@ -43,11 +52,11 @@ instance (Floating a) => Floating (Expr a) where
   sin = Sin
   cos = Cos
   (**) = Pow
-  asin = error "asin not implemented"
-  acos = error "acos not implemented"
-  atan = error "atan not implemented"
-  sinh = error "sinh not implemented"
-  cosh = error "cosh not implemented"
-  asinh = error "asinh not implemented"
-  acosh = error "acosh not implemented"
-  atanh = error "atanh not implemented"
+  asin = Asin
+  acos = Acos
+  atan = Atan
+  sinh = Sinh
+  cosh = Cosh
+  asinh = Asinh
+  acosh = Acosh
+  atanh = Atanh
