@@ -2,15 +2,15 @@ module Dydx.Expr where
 
 -- Expression Tree
 data Expr a
-  = Const a
-  | Var String
-  | Add (Expr a) (Expr a)
-  | Mul (Expr a) (Expr a)
-  | Pow (Expr a) (Expr a)
-  | Log (Expr a)
-  | Exp (Expr a)
-  | Sin (Expr a)
-  | Cos (Expr a)
+  = Const !a
+  | Var !String
+  | Add !(Expr a) !(Expr a)
+  | Mul !(Expr a) !(Expr a)
+  | Pow !(Expr a) !(Expr a)
+  | Log !(Expr a)
+  | Exp !(Expr a)
+  | Sin !(Expr a)
+  | Cos !(Expr a)
   | NaN
   deriving (Show, Eq, Ord)
 
