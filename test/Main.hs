@@ -2,8 +2,8 @@ module Main where
 
 import Dydx.Diff
 import Dydx.Expr
-import Dydx.Pretty
 import Dydx.HighorderSimplify
+import Dydx.Pretty
 import System.Exit (exitFailure)
 
 assertEq :: (Show a, Eq a) => String -> a -> a -> IO ()
@@ -66,8 +66,8 @@ main = do
     assertEq "Pow derivative (Raw x^2)" expectedX2Diff (diff "x" x2)
 
     putStrLn "\nRunning Simplify tests..."
-    assertEq "Simplify x - x" (Const 0) (simplify (sub x x))
-    assertEq "Simplify 0 + x" x (simplify (Add (Const 0) x))
+    assertEq "Simplify x - x" 0 (simplify (x - x)) -- instance of Num
+    assertEq "Simplify 0 + x" x (simplify (0 + x))
     assertEq "Simplify x * 1" x (simplify (Mul x (Const 1)))
     assertEq "Simplify -(-x)" x (simplify (neg (neg x)))
     assertEq "Simplify x^1" x (simplify (Pow x (Const 1)))
@@ -77,10 +77,7 @@ main = do
 
     assertEq "Simplify diff(x^2)" (Mul (Const 2) x) (simplify (diff "x" (Pow x (Const 2))))
     assertEq "Simplify diff(x^3)" (Mul (Const 3) (Pow x (Const 2))) (simplify (diff "x" (Pow x (Const 3))))
-
-    let fiveX = Mul (Const 5) x
-    assertEq "Simplify diff(5x)" (Const 5) (simplify (diff "x" fiveX))
-
+    assertEq "Simplify diff(5x)" (Const 5) (simplify (diff "x" x * 5))
     assertEq "Simplify diff(x/5)" (Pow (Const 5) (Const (-1))) (simplify (diff "x" (divide x (Const 5))))
 
     putStrLn "\nRunning Pretty Printer (Sugar Recovery) tests..."
