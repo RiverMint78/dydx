@@ -1,4 +1,4 @@
-module Dydx.HighorderSimplify (simplify) where
+module Dydx.HighorderSimplify (simplify, simplifyFixed) where
 
 import Data.List (sortBy)
 import Data.Ord (comparing)
@@ -6,14 +6,32 @@ import Dydx.Expr
 
 simplify :: (Eq a, Ord a, Num a) => Expr a -> Expr a
 simplify NaN = NaN
+simplify (Mul e (Add a b)) = Add (simplify (Mul e a)) (simplify (Mul e b))
+simplify (Mul (Add a b) e) = Add (simplify (Mul a e)) (simplify (Mul b e))
 simplify (Add le re) = simplifyAdd (simplify le) (simplify re)
 simplify (Mul le re) = simplifyMul (simplify le) (simplify re)
 simplify (Pow le re) = simplifyPow (simplify le) (simplify re)
+simplify (Sqrt e) = simplifySqrt (simplify e)
 simplify (Log e) = simplifyLog (simplify e)
+simplify (Exp e) = simplifyExp (simplify e)
 simplify (Sin e) = simplifySin (simplify e)
 simplify (Cos e) = simplifyCos (simplify e)
-simplify (Exp e) = simplifyExp (simplify e)
+simplify (Asin e) = simplifyAsin (simplify e)
+simplify (Acos e) = simplifyAcos (simplify e)
+simplify (Atan e) = simplifyAtan (simplify e)
+simplify (Sinh e) = simplifySinh (simplify e)
+simplify (Cosh e) = simplifyCosh (simplify e)
+simplify (Asinh e) = simplifyAsinh (simplify e)
+simplify (Acosh e) = simplifyAcosh (simplify e)
+simplify (Atanh e) = simplifyAtanh (simplify e)
 simplify e = e -- Const / Var
+
+simplifyFixed :: (Eq a, Ord a, Num a) => Expr a -> Expr a
+simplifyFixed e
+  | e' == e = e
+  | otherwise = simplifyFixed e'
+ where
+  e' = simplify e
 
 flattenOp :: (Expr a -> Maybe (Expr a, Expr a)) -> Expr a -> [Expr a]
 flattenOp matchOp expr = go expr []
@@ -136,3 +154,51 @@ simplifyExp NaN = NaN
 simplifyExp (Const 0) = Const 1
 simplifyExp (Log e) = e
 simplifyExp e = Exp e
+
+simplifySqrt :: (Eq a, Ord a, Num a) => Expr a -> Expr a
+simplifySqrt NaN = NaN
+simplifySqrt (Const n) | n <= 0 = NaN
+simplifySqrt (Const 0) = Const 0
+simplifySqrt (Const 1) = Const 1
+simplifySqrt (Pow u (Const 2)) = u
+simplifySqrt e = Sqrt e
+
+simplifyAsin :: (Eq a, Num a) => Expr a -> Expr a
+simplifyAsin NaN = NaN
+simplifyAsin (Const 0) = Const 0
+simplifyAsin e = Asin e
+
+simplifyAcos :: (Eq a, Num a) => Expr a -> Expr a
+simplifyAcos NaN = NaN
+simplifyAcos (Const 1) = Const 0
+simplifyAcos e = Acos e
+
+simplifyAtan :: (Eq a, Num a) => Expr a -> Expr a
+simplifyAtan NaN = NaN
+simplifyAtan (Const 0) = Const 0
+simplifyAtan e = Atan e
+
+simplifySinh :: (Eq a, Num a) => Expr a -> Expr a
+simplifySinh NaN = NaN
+simplifySinh (Const 0) = Const 0
+simplifySinh e = Sinh e
+
+simplifyCosh :: (Eq a, Num a) => Expr a -> Expr a
+simplifyCosh NaN = NaN
+simplifyCosh (Const 0) = Const 1
+simplifyCosh e = Cosh e
+
+simplifyAsinh :: (Eq a, Num a) => Expr a -> Expr a
+simplifyAsinh NaN = NaN
+simplifyAsinh (Const 0) = Const 0
+simplifyAsinh e = Asinh e
+
+simplifyAcosh :: (Eq a, Num a) => Expr a -> Expr a
+simplifyAcosh NaN = NaN
+simplifyAcosh (Const 1) = Const 0
+simplifyAcosh e = Acosh e
+
+simplifyAtanh :: (Eq a, Num a) => Expr a -> Expr a
+simplifyAtanh NaN = NaN
+simplifyAtanh (Const 0) = Const 0
+simplifyAtanh e = Atanh e
