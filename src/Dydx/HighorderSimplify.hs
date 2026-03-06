@@ -73,6 +73,7 @@ baseAdd e = e
 
 extractAdd :: (Num a) => Expr a -> (a, Expr a)
 extractAdd (Mul (Const c) e) = (c, e)
+extractAdd (Const c) = (c, Const 1)
 extractAdd e = (1, e)
 
 mergeAddTerms :: (Eq a, Ord a, Num a) => [Expr a] -> [Expr a]
