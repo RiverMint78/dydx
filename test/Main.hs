@@ -2,7 +2,7 @@ module Main where
 
 import Dydx.Diff
 import Dydx.Expr
-import Dydx.HighorderSimplify
+import Dydx.Simplify
 import Dydx.Pretty
 import System.Exit (exitFailure)
 

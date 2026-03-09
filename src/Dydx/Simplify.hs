@@ -1,4 +1,4 @@
-module Dydx.HighorderSimplify (simplify, simplifyFixed) where
+module Dydx.Simplify (simplify, simplifyFixed) where
 
 import Data.List (sortBy)
 import Data.Ord (comparing)

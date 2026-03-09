@@ -1,7 +1,7 @@
 module Dydx.Diff (diff, diffN) where
 
 import Dydx.Expr
-import Dydx.HighorderSimplify (simplifyFixed)
+import Dydx.Simplify (simplifyFixed)
 
 diff :: (Num a) => String -> Expr a -> Expr a
 diff _ NaN = NaN

@@ -62,7 +62,7 @@ library
     exposed-modules:  Dydx.Expr
                     , Dydx.Diff
                     -- , Dydx.Simplify
-                    , Dydx.HighorderSimplify
+                    , Dydx.Simplify
                     , Dydx.Pretty
                     , Dydx.Parser
 
