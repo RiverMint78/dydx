@@ -27,4 +27,7 @@ diff var (Acosh u) = diff var u * Pow (Sqrt (Pow u 2 - 1)) (-1)
 diff var (Atanh u) = diff var u * Pow (1 - Pow u 2) (-1)
 
 diffN :: (Eq a, Ord a, Num a) => Int -> String -> Expr a -> Expr a
-diffN n var = (!! n) . iterate (simplifyFixed . diff var)
+diffN n var expr
+    | n < 0 = error "diffN: negative order not supported"
+    | n == 0 = expr
+    | otherwise = (!! n) . iterate (simplifyFixed . diff var) $ expr
