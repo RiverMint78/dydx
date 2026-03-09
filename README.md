@@ -14,15 +14,15 @@ Download the `.exe` from [Releases](https://github.com/RiverMint78/dydx/releases
 
 ```bash
 dydx> diff x (x ^ 2 + 3 * x + 5)
-2*x + 3
+3 + 2*x
 
-dydx> diffN 2 x x^3
+dydx> diff 2 x x^3
 6*x
 
-dydx> diffN 2 x sin(exp(x) + y^2) + z
+dydx> diff 2 x sin(exp(x) + y^2) + z
 -exp(x)^2*sin(y^2 + exp(x)) + exp(x)*cos(y^2 + exp(x))
 
-dydx> simp (0 * x + 1 * y + (5 - 5))
+dydx> 0 * x + 1 * y + asin(z) * (5 - 5)
 y
 
 dydx> ln(-1)

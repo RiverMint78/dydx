@@ -3,7 +3,8 @@ module Main where
 import System.IO (hFlush, stdout)
 import Text.Read (readMaybe)
 
-import Dydx.Diff (diff, diffN)
+import Data.Char (toLower)
+import Dydx.Diff (diffN)
 import Dydx.Expr
 import Dydx.Parser (parseExpr)
 import Dydx.Pretty (pretty)
@@ -12,36 +13,34 @@ import Dydx.Simplify (simplifyFixed)
 main :: IO ()
 main = do
     putStrLn "Available commands:"
-    putStrLn "  diff <var> <expr>      - Compute 1st derivative"
-    putStrLn "  diffN <n> <var> <expr> - Compute N-th derivative"
-    putStrLn "  simp <expr>            - Simplify expression"
-    putStrLn "  :q, :quit or exit      - Quit the program"
-    putStrLn "-----------------------------------------"
+    putStrLn "  diff [n] <var> <expr>  - Compute N-th derivative (default n=1)"
+    putStrLn "  <expr>                 - Simplify expression"
+    putStrLn "  :q, :quit or :exit     - Quit the program"
+    putStrLn "-----------------------------------------------------"
     repl
 
 repl :: IO ()
 repl = do
-    putStr "dydx> "
-    hFlush stdout
+    putStr "dydx> " >> hFlush stdout
     input <- getLine
     case words input of
         [] -> repl
-        [cmd] | cmd `elem` [":q", ":quit", "exit"] -> putStrLn "Bye!"
-        ("diff" : var : rest) -> do
-            eval (unwords rest) (simplifyFixed . diff var)
-            repl
-        ("diffN" : nStr : var : rest) -> do
-            maybe
-                (putStrLn "Error: N must be an integer.")
-                (\n -> eval (unwords rest) (diffN n var))
-                (readMaybe nStr)
-            repl
-        ("simp" : rest) -> do
-            eval (unwords rest) simplifyFixed
-            repl
-        _ -> do
-            eval input simplifyFixed
-            repl
+        (rawCmd : args)
+            | let cmd = map toLower rawCmd
+            , cmd `elem` [":q", ":quit", ":exit"] ->
+                putStrLn "Bye!"
+            | map toLower rawCmd == "diff" -> handleDiff args >> repl
+        _ -> eval input simplifyFixed >> repl
+  where
+    handleDiff [] = putStrLn "Error: diff requires a variable and an expression."
+    handleDiff (nStr : var : e : es)
+        | Just n <- readMaybe nStr =
+            if n < 0
+                then putStrLn "Error: Derivative order cannot be negative."
+                else eval (unwords (e : es)) (diffN n var)
+    handleDiff (var : e : es) =
+        eval (unwords (e : es)) (diffN 1 var)
+    handleDiff _ = putStrLn "Error: Missing expression."
 
 eval :: String -> (Expr Integer -> Expr Integer) -> IO ()
 eval exprStr processFn =
