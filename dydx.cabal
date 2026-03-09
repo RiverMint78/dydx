@@ -20,7 +20,7 @@ name:               dydx
 -- PVP summary:     +-+------- breaking API changes
 --                  | | +----- non-breaking API additions
 --                  | | | +--- code changes with no API change
-version:            0.1.0.0
+version:            0.1.1.0
 
 -- A short (one-line) description of the package.
 -- synopsis:
@@ -61,7 +61,6 @@ library
     -- Modules exported by the library.
     exposed-modules:  Dydx.Expr
                     , Dydx.Diff
-                    -- , Dydx.Simplify
                     , Dydx.Simplify
                     , Dydx.Pretty
                     , Dydx.Parser
