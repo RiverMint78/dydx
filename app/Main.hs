@@ -11,7 +11,7 @@ import Dydx.Simplify (simplifyFixed)
 
 main :: IO ()
 main = do
-    putStrLn "\nDydx available commands:"
+    putStrLn "Available commands:"
     putStrLn "  diff <var> <expr>      - Compute 1st derivative"
     putStrLn "  diffN <n> <var> <expr> - Compute N-th derivative"
     putStrLn "  simp <expr>            - Simplify expression"
