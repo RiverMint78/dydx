@@ -1,0 +1,43 @@
+name: Auto Release Windows Executable
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build and Release
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Haskell
+        uses: haskell-actions/setup@v2
+        with:
+          ghc-version: "9.12"
+          cabal-version: "latest"
+
+      - name: Build the project
+        run: |
+          cabal update
+          cabal build --ghc-options="-O2 -optl-s" --enable-split-sections
+
+      - name: Extract executable
+        run: |
+          $exePath = cabal list-bin dydx
+          Write-Host "Found executable at: $exePath"
+          Copy-Item $exePath -Destination "dydx-${{ github.ref_name }}-windows-x64.exe"
+
+      - name: Publish Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dydx-${{ github.ref_name }}-windows-x64.exe
+          generate_release_notes: true
+          draft: true
+          prerelease: false
