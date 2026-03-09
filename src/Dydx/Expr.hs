@@ -30,6 +30,8 @@ sub :: (Num a) => Expr a -> Expr a -> Expr a
 sub le re = Add le (neg re)
 divide :: (Num a) => Expr a -> Expr a -> Expr a
 divide le re = Mul le (Pow re (Const (-1)))
+tangent :: (Num a) => Expr a -> Expr a
+tangent e = Sin e `divide` Cos e
 
 -- instances
 instance (Num a) => Num (Expr a) where

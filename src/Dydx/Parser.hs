@@ -1,7 +1,7 @@
 module Dydx.Parser (parseExpr) where
 
 import Data.Functor.Identity (Identity)
-import Dydx.Expr (Expr (..), divide, neg, sub)
+import Dydx.Expr (Expr (..), divide, neg, sub, tangent)
 import Text.Parsec (
     between,
     char,
@@ -54,6 +54,7 @@ functionCall = try $ do
     funcTable =
         [ ("sin", Sin)
         , ("cos", Cos)
+        , ("tan", tangent)
         , ("asin", Asin)
         , ("acos", Acos)
         , ("atan", Atan)
