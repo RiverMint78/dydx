@@ -1,9 +1,27 @@
 module Dydx.Parser (parseExpr) where
 
 import Data.Functor.Identity (Identity)
-import Dydx.Expr
-import Text.Parsec
-import Text.Parsec.Expr
+import Dydx.Expr (Expr (..), divide, neg, sub)
+import Text.Parsec (
+    between,
+    char,
+    choice,
+    digit,
+    eof,
+    letter,
+    many1,
+    oneOf,
+    parse,
+    skipMany,
+    string,
+    try,
+    (<?>),
+ )
+import Text.Parsec.Expr (
+    Assoc (AssocLeft, AssocRight),
+    Operator (Infix, Prefix),
+    buildExpressionParser,
+ )
 import Text.Parsec.String (Parser)
 
 parseExpr :: (Num a) => String -> Either String (Expr a)
@@ -14,62 +32,55 @@ parseExpr input = case parse (whitespace >> exprParser <* eof) "" input of
 -- Tokens
 
 whitespace :: Parser ()
-whitespace = skipMany (char ' ' <|> char '\t')
+whitespace = skipMany (oneOf " \t")
 
 lexeme :: Parser b -> Parser b
-lexeme p = do
-    x <- p
-    whitespace
-    return x
+lexeme = (<* whitespace)
 
 number :: (Num a) => Parser (Expr a)
-number = lexeme $ do
-    digits <- many1 digit
-    return $ Const (fromInteger (read digits))
+number = lexeme $ Const . fromInteger . read <$> many1 digit
 
 variable :: (Num a) => Parser (Expr a)
-variable = lexeme $ do
-    name <- many1 letter
-    case name of
-        "e" -> return (Exp (Const 1))
-        _ -> return (Var name)
+variable = lexeme $ choice [Exp (Const 1) <$ string "e", NaN <$ string "NaN", Var <$> many1 letter]
 
 functionCall :: (Num a) => Parser (Expr a)
 functionCall = try $ do
-    name <- many1 letter
+    fname <- many1 letter
     whitespace
-    arg <- between (lexeme (char '(')) (lexeme (char ')')) exprParser
-    case name of
-        "sin" -> return $ Sin arg
-        "cos" -> return $ Cos arg
-        "asin" -> return $ Asin arg
-        "acos" -> return $ Acos arg
-        "atan" -> return $ Atan arg
-        "sinh" -> return $ Sinh arg
-        "cosh" -> return $ Cosh arg
-        "asinh" -> return $ Asinh arg
-        "acosh" -> return $ Acosh arg
-        "atanh" -> return $ Atanh arg
-        "exp" -> return $ Exp arg
-        "ln" -> return $ Log arg
-        "sqrt" -> return $ Sqrt arg
-        "NaN" -> return NaN
-        _ -> fail $ "Unknown function: " ++ name
+    case lookup fname funcTable of
+        Just con -> con <$> between (lexeme (char '(')) (lexeme (char ')')) exprParser
+        Nothing -> fail $ "Unknown function: " ++ fname
+  where
+    funcTable =
+        [ ("sin", Sin)
+        , ("cos", Cos)
+        , ("asin", Asin)
+        , ("acos", Acos)
+        , ("atan", Atan)
+        , ("sinh", Sinh)
+        , ("cosh", Cosh)
+        , ("asinh", Asinh)
+        , ("acosh", Acosh)
+        , ("atanh", Atanh)
+        , ("exp", Exp)
+        , ("ln", Log)
+        , ("log", Log)
+        , ("sqrt", Sqrt)
+        ]
+
+-- Combinator
 
 term :: (Num a) => Parser (Expr a)
 term =
-    functionCall
-        <|> number
-        <|> variable
-        <|> between (lexeme (char '(')) (lexeme (char ')')) exprParser
+    choice [functionCall, number, variable, between (lexeme (char '(')) (lexeme (char ')')) exprParser]
         <?> "simple expression (number, variable, or function)"
 
 operatorTable :: (Num a) => [[Operator String () Identity (Expr a)]]
 operatorTable =
-    [ [Infix (lexeme (char '^') >> return Pow) AssocRight]
-    , [Prefix (lexeme (char '-') >> return neg)]
-    , [Infix (lexeme (char '*') >> return Mul) AssocLeft, Infix (lexeme (char '/') >> return divide) AssocLeft]
-    , [Infix (lexeme (char '+') >> return Add) AssocLeft, Infix (lexeme (char '-') >> return sub) AssocLeft]
+    [ [Infix (Pow <$ lexeme (char '^')) AssocRight]
+    , [Prefix (neg <$ lexeme (char '-'))]
+    , [Infix (Mul <$ lexeme (char '*')) AssocLeft, Infix (divide <$ lexeme (char '/')) AssocLeft]
+    , [Infix (Add <$ lexeme (char '+')) AssocLeft, Infix (sub <$ lexeme (char '-')) AssocLeft]
     ]
 
 exprParser :: (Num a) => Parser (Expr a)
