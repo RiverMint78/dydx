@@ -158,7 +158,7 @@ simplifyExp e = Exp e
 
 simplifySqrt :: (Eq a, Ord a, Num a) => Expr a -> Expr a
 simplifySqrt NaN = NaN
-simplifySqrt (Const n) | n <= 0 = NaN
+simplifySqrt (Const n) | n < 0 = NaN
 simplifySqrt (Const 0) = Const 0
 simplifySqrt (Const 1) = Const 1
 simplifySqrt (Pow u (Const 2)) = u
